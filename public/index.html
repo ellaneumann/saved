@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Amount Saved</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+  <div class="sheet" id="auth-screen" hidden>
+    <p class="eyebrow">Welcome</p>
+    <h1>Amount Saved</h1>
+    <p class="auth-sub" id="auth-sub">Sign in to your ledger.</p>
+
+    <form class="auth-form" id="auth-form">
+      <input type="text" id="auth-username" placeholder="Username" autocomplete="username" required minlength="2" maxlength="32" />
+      <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" required minlength="6" />
+      <button type="submit" id="auth-submit">Sign in</button>
+    </form>
+    <p class="auth-error" id="auth-error" hidden></p>
+    <button type="button" class="auth-toggle" id="auth-toggle">Need an account? Create one</button>
+  </div>
+
+  <div class="sheet" id="app-screen" hidden>
+    <div class="top-bar">
+      <div>
+        <p class="eyebrow" id="today-label">Today</p>
+        <h1>Amount Saved</h1>
+      </div>
+      <div class="user-bar">
+        <span id="username-display"></span>
+        <button type="button" id="logout-btn">Log out</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-label">Today</span>
+        <span class="stat-value" id="stat-day">$0.00</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">This week</span>
+        <span class="stat-value" id="stat-week">$0.00</span>
+      </div>
+      <div class="stat total">
+        <span class="stat-label">All time</span>
+        <span class="stat-value" id="stat-total">$0.00</span>
+      </div>
+    </div>
+
+    <form class="entry" id="entry-form">
+      <select id="input-event-select"></select>
+      <input type="number" id="input-amount" placeholder="0.00" step="0.01" min="0" inputmode="decimal" required />
+      <button type="submit" id="entry-submit">Add</button>
+      <input type="text" id="input-event-custom" placeholder="Describe it" autocomplete="off" hidden />
+    </form>
+    <p class="form-error" id="entry-error" hidden></p>
+
+    <button type="button" class="presets-toggle" id="presets-toggle">
+      <span class="chev">›</span> Edit usual costs
+    </button>
+    <div class="presets-panel" id="presets-panel" hidden></div>
+
+    <div class="day-heading">
+      <span class="label">Today's entries</span>
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
