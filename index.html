@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Amount Saved</title>
+<meta name="description" content="A running ledger of the money you've decided not to spend." />
+<style>
+  :root {
+    --bg: #0b0a08;
+    --surface: #17140f;
+    --surface-alt: #201c15;
+    --text: #f3ede0;
+    --text-muted: #9c9284;
+    --accent: #c99a44;
+    --accent-soft: rgba(201, 154, 68, 0.14);
+    --positive: #8fb996;
+    --border: #2a2620;
+    --danger: #c96a4a;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f1e8;
+      --surface: #fffdf8;
+      --surface-alt: #ece5d5;
+      --text: #211d16;
+      --text-muted: #6b6255;
+      --accent: #a97a1f;
+      --accent-soft: rgba(169, 122, 31, 0.12);
+      --positive: #3f7a4d;
+      --border: #ddd4bf;
+      --danger: #a54a30;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0a08;
+    --surface: #17140f;
+    --surface-alt: #201c15;
+    --text: #f3ede0;
+    --text-muted: #9c9284;
+    --accent: #c99a44;
+    --accent-soft: rgba(201, 154, 68, 0.14);
+    --positive: #8fb996;
+    --border: #2a2620;
+    --danger: #c96a4a;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f1e8;
+    --surface: #fffdf8;
+    --surface-alt: #ece5d5;
+    --text: #211d16;
+    --text-muted: #6b6255;
+    --accent: #a97a1f;
+    --accent-soft: rgba(169, 122, 31, 0.12);
+    --positive: #3f7a4d;
+    --border: #ddd4bf;
+    --danger: #a54a30;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 56px 20px 80px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .sheet {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 6px;
+  }
+
+  h1 {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    font-weight: 600;
+    font-size: 42px;
+    letter-spacing: 0.01em;
+    margin: 0 0 32px;
+    text-wrap: balance;
+    color: var(--text);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+
+  .stat {
+    background: var(--surface);
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stat-label {
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .stat-value {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 22px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .stat.total .stat-value { color: var(--positive); }
+
+  form.entry {
+    display: grid;
+    grid-template-columns: 1fr 130px auto;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .entry input,
+  .entry select {
+    font: inherit;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 11px 13px;
+    outline: none;
+    grid-row: 1;
+  }
+
+  .entry select {
+    grid-column: 1;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+      linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  #input-amount { grid-column: 2; }
+
+  .entry button { grid-column: 3; }
+
+  #input-event-custom {
+    grid-column: 1 / span 2;
+    grid-row: 2;
+  }
+
+  .entry input::placeholder { color: var(--text-muted); }
+
+  .entry input:focus,
+  .entry select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .entry input[type="number"] {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .entry button {
+    font: inherit;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    padding: 0 20px;
+    cursor: pointer;
+  }
+
+  .entry button:hover { filter: brightness(1.08); }
+  .entry button:focus-visible,
+  .entry input:focus-visible,
+  .entry select:focus-visible,
+  .row .del:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .presets-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    padding: 4px 2px;
+    margin-bottom: 8px;
+  }
+
+  .presets-toggle:hover { color: var(--accent); }
+
+  .presets-toggle .chev {
+    display: inline-block;
+    transition: transform 0.15s ease;
+    font-size: 10px;
+  }
+
+  .presets-toggle.open .chev { transform: rotate(90deg); }
+
+  .presets-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    margin-bottom: 20px;
+  }
+
+  .preset-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .preset-row:last-child { border-bottom: none; }
+
+  .preset-row .preset-label {
+    font-size: 13.5px;
+    color: var(--text);
+  }
+
+  .preset-row .preset-cost {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-muted);
+  }
+
+  .preset-row .preset-cost input {
+    width: 76px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 8px;
+    text-align: right;
+  }
+
+  .preset-row .preset-cost input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+    outline: none;
+  }
+
+  .day-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .day-heading .label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .list {
+    border-top: 1px solid var(--border);
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 2px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .row .bullet {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+  }
+
+  .row .event {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row .amount {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    color: var(--positive);
+    white-space: nowrap;
+  }
+
+  .row .del {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 6px;
+    opacity: 0;
+    transition: opacity 0.12s ease, color 0.12s ease;
+  }
+
+  .row:hover .del,
+  .row .del:focus-visible { opacity: 1; }
+  .row .del:hover { color: var(--danger); }
+
+  .empty {
+    padding: 28px 4px;
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <p class="eyebrow" id="today-label">Today</p>
+  <h1>Amount Saved</h1>
+
+  <div class="stats">
+    <div class="stat">
+      <span class="stat-label">Today</span>
+      <span class="stat-value" id="stat-day">$0.00</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">This week</span>
+      <span class="stat-value" id="stat-week">$0.00</span>
+    </div>
+    <div class="stat total">
+      <span class="stat-label">All time</span>
+      <span class="stat-value" id="stat-total">$0.00</span>
+    </div>
+  </div>
+
+  <form class="entry" id="entry-form">
+    <select id="input-event-select"></select>
+    <input type="number" id="input-amount" placeholder="0.00" step="0.01" min="0" inputmode="decimal" required />
+    <button type="submit">Add</button>
+    <input type="text" id="input-event-custom" placeholder="Describe it" autocomplete="off" hidden />
+  </form>
+
+  <button type="button" class="presets-toggle" id="presets-toggle">
+    <span class="chev">›</span> Edit usual costs
+  </button>
+  <div class="presets-panel" id="presets-panel" hidden></div>
+
+  <div class="day-heading">
+    <span class="label">Today's entries</span>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+
+<script>
+  (function () {
+    var STORAGE_KEY = "amount-saved-entries";
+    var PRESET_COST_KEY = "amount-saved-preset-costs";
+
+    var PRESETS = [
+      { id: "breakfast", label: "Breakfast", cost: 8 },
+      { id: "lunch", label: "Lunch", cost: 12 },
+      { id: "dinner", label: "Dinner", cost: 18 },
+      { id: "coffee", label: "Coffee", cost: 5 }
+    ];
+
+    function loadEntries() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveEntries(entries) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    function loadPresetCosts() {
+      var costs = {};
+      PRESETS.forEach(function (p) { costs[p.id] = p.cost; });
+      try {
+        var raw = localStorage.getItem(PRESET_COST_KEY);
+        if (raw) {
+          var saved = JSON.parse(raw);
+          Object.keys(saved).forEach(function (id) {
+            if (costs.hasOwnProperty(id)) costs[id] = saved[id];
+          });
+        }
+      } catch (e) {}
+      return costs;
+    }
+
+    function savePresetCosts(costs) {
+      localStorage.setItem(PRESET_COST_KEY, JSON.stringify(costs));
+    }
+
+    function dateKey(ts) {
+      var d = new Date(ts);
+      return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+    }
+
+    function startOfWeek(ts) {
+      var d = new Date(ts);
+      d.setHours(0, 0, 0, 0);
+      var day = d.getDay();
+      var diff = (day === 0 ? -6 : 1) - day; // Monday as start of week
+      d.setDate(d.getDate() + diff);
+      return d.getTime();
+    }
+
+    function formatMoney(n) {
+      return "$" + n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    var entries = loadEntries();
+    var presetCosts = loadPresetCosts();
+    var list = document.getElementById("list");
+    var statDay = document.getElementById("stat-day");
+    var statWeek = document.getElementById("stat-week");
+    var statTotal = document.getElementById("stat-total");
+    var todayLabel = document.getElementById("today-label");
+    var form = document.getElementById("entry-form");
+    var eventSelect = document.getElementById("input-event-select");
+    var eventCustom = document.getElementById("input-event-custom");
+    var inputAmount = document.getElementById("input-amount");
+    var presetsToggle = document.getElementById("presets-toggle");
+    var presetsPanel = document.getElementById("presets-panel");
+
+    PRESETS.forEach(function (p) {
+      var opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.label;
+      eventSelect.appendChild(opt);
+    });
+    var customOpt = document.createElement("option");
+    customOpt.value = "custom";
+    customOpt.textContent = "Custom…";
+    eventSelect.appendChild(customOpt);
+
+    function presetLabel(id) {
+      var p = PRESETS.filter(function (x) { return x.id === id; })[0];
+      return p ? p.label : id;
+    }
+
+    function syncAmountToPreset() {
+      if (eventSelect.value === "custom") {
+        eventCustom.hidden = false;
+        eventCustom.required = true;
+        inputAmount.value = "";
+        eventCustom.focus();
+      } else {
+        eventCustom.hidden = true;
+        eventCustom.required = false;
+        inputAmount.value = presetCosts[eventSelect.value].toFixed(2);
+      }
+    }
+
+    eventSelect.addEventListener("change", syncAmountToPreset);
+    syncAmountToPreset();
+
+    function renderPresetsPanel() {
+      presetsPanel.innerHTML = "";
+      PRESETS.forEach(function (p) {
+        var row = document.createElement("div");
+        row.className = "preset-row";
+
+        var label = document.createElement("span");
+        label.className = "preset-label";
+        label.textContent = p.label;
+
+        var costWrap = document.createElement("span");
+        costWrap.className = "preset-cost";
+
+        var dollar = document.createElement("span");
+        dollar.textContent = "$";
+
+        var costInput = document.createElement("input");
+        costInput.type = "number";
+        costInput.step = "0.01";
+        costInput.min = "0";
+        costInput.value = presetCosts[p.id].toFixed(2);
+        costInput.addEventListener("change", function () {
+          var val = parseFloat(costInput.value);
+          if (isNaN(val) || val < 0) val = 0;
+          presetCosts[p.id] = val;
+          savePresetCosts(presetCosts);
+          costInput.value = val.toFixed(2);
+          if (eventSelect.value === p.id) syncAmountToPreset();
+        });
+
+        costWrap.appendChild(dollar);
+        costWrap.appendChild(costInput);
+        row.appendChild(label);
+        row.appendChild(costWrap);
+        presetsPanel.appendChild(row);
+      });
+    }
+
+    renderPresetsPanel();
+
+    presetsToggle.addEventListener("click", function () {
+      var open = presetsPanel.hidden;
+      presetsPanel.hidden = !open;
+      presetsToggle.classList.toggle("open", open);
+    });
+
+    var now = Date.now();
+    var todayKey = dateKey(now);
+    var weekStart = startOfWeek(now);
+
+    todayLabel.textContent = new Date(now).toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric"
+    });
+
+    function render() {
+      var todayEntries = entries.filter(function (e) { return dateKey(e.ts) === todayKey; });
+      var weekEntries = entries.filter(function (e) { return e.ts >= weekStart; });
+
+      var dayTotal = todayEntries.reduce(function (sum, e) { return sum + e.amount; }, 0);
+      var weekTotal = weekEntries.reduce(function (sum, e) { return sum + e.amount; }, 0);
+      var allTotal = entries.reduce(function (sum, e) { return sum + e.amount; }, 0);
+
+      statDay.textContent = formatMoney(dayTotal);
+      statWeek.textContent = formatMoney(weekTotal);
+      statTotal.textContent = formatMoney(allTotal);
+
+      list.innerHTML = "";
+
+      if (todayEntries.length === 0) {
+        var empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "Nothing logged yet today.";
+        list.appendChild(empty);
+        return;
+      }
+
+      todayEntries
+        .slice()
+        .sort(function (a, b) { return b.ts - a.ts; })
+        .forEach(function (e) {
+          var row = document.createElement("div");
+          row.className = "row";
+
+          var bullet = document.createElement("span");
+          bullet.className = "bullet";
+
+          var event = document.createElement("span");
+          event.className = "event";
+          event.textContent = e.event;
+
+          var amount = document.createElement("span");
+          amount.className = "amount";
+          amount.textContent = "+" + formatMoney(e.amount);
+
+          var del = document.createElement("button");
+          del.className = "del";
+          del.type = "button";
+          del.setAttribute("aria-label", "Remove " + e.event);
+          del.textContent = "×";
+          del.addEventListener("click", function () {
+            entries = entries.filter(function (x) { return x.id !== e.id; });
+            saveEntries(entries);
+            render();
+          });
+
+          row.appendChild(bullet);
+          row.appendChild(event);
+          row.appendChild(amount);
+          row.appendChild(del);
+          list.appendChild(row);
+        });
+    }
+
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var isCustom = eventSelect.value === "custom";
+      var eventName = isCustom ? eventCustom.value.trim() : presetLabel(eventSelect.value);
+      var amount = parseFloat(inputAmount.value);
+      if (!eventName || isNaN(amount) || amount < 0) return;
+
+      entries.push({
+        id: Date.now() + "-" + Math.random().toString(36).slice(2),
+        event: eventName,
+        amount: amount,
+        ts: Date.now()
+      });
+      saveEntries(entries);
+      eventCustom.value = "";
+      eventSelect.selectedIndex = 0;
+      syncAmountToPreset();
+      render();
+    });
+
+    render();
+  })();
+</script>
+</body>
+</html>
